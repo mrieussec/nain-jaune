@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"from PIL import Image; img = Image.open\\('/Users/mael.rieussec/Dev/NainJaune/client/src/components/Nain_jaune.jpg'\\); print\\(img.size\\)\")",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/mael.rieussec/Dev/NainJaune/client/src/components/Nain_jaune.jpg)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
