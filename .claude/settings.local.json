@@ -7,7 +7,11 @@
       "Bash(firebase projects:list)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(gh repo *)",
+      "Bash(npm run *)",
+      "Bash(firebase deploy *)",
+      "Bash(git push *)"
     ]
   }
 }
