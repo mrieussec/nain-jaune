@@ -2,6 +2,10 @@
 
 Une version en ligne et multijoueur du jeu de société français classique "Nain Jaune" (Yellow Dwarf).
 
+Le jeu est déployé et jouable à l'adresse https://nain-jaune-online.web.app
+
+Le Font-end est déployé sur Firebase et le Back-end sur Render
+
 ## 🎮 À propos du jeu
 
 Le Nain Jaune est un jeu de cartes traditionnel français pour 2-6 joueurs. Les joueurs doivent se débarrasser de toutes leurs cartes en les plaçant sur les piles de la table ou sur les fondations. Le premier joueur à vider sa main gagne la manche.
