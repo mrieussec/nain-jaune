@@ -65,18 +65,16 @@ export const gameHandlers = {
     }
 
     const gameState = room.getGameState();
-    
-    // Send individual messages to each player with their own hand
-    for (const [playerId, player] of room.players) {
-      io.to(player.id).emit('gameStarted', {
-        gameState,
-        players: Array.from(room.players.values()).map(p => ({
-          id: p.id,
-          name: p.name,
-          hand: p.id === player.id ? p.getHand() : [],
-          handSize: p.getHandSize()
-        }))
-      });
+
+    // Broadcast game start to the whole room so no player misses it
+    const roomChannel = `room-${roomId}`;
+    console.log(`[startGame] Broadcasting to channel "${roomChannel}" – sockets in room:`,
+      [...(io.sockets.adapter.rooms.get(roomChannel) || [])]);
+    io.to(roomChannel).emit('gameStarted', { gameState });
+
+    // Send each player their hand individually
+    for (const [, player] of room.players) {
+      io.to(player.id).emit('handUpdated', { hand: player.getHand() });
     }
 
     io.emit('roomsUpdated', { rooms: gameManager.getRoomsInfo() });
@@ -109,6 +107,8 @@ export const gameHandlers = {
       playerId: socket.id,
       card,
       result: result.type,
+      winnings: result.winnings || 0,
+      specialCard: result.specialCard || false,
       gameState,
       players: playerStates,
       message: room.message,
@@ -154,25 +154,59 @@ export const gameHandlers = {
 
   leaveRoom(socket, data, callback, gameManager, io) {
     const { roomId } = data;
+
+    // Récupérer le nom avant suppression
+    const room = gameManager.getRoom(roomId);
+    const leavingPlayer = room?.players.get(socket.id);
+    const playerName = leavingPlayer?.name || null;
+
     gameManager.removePlayer(socket.id);
     socket.leave(`room-${roomId}`);
-    
+
     io.emit('roomsUpdated', { rooms: gameManager.getRoomsInfo() });
     io.to(`room-${roomId}`).emit('playerLeft', {
-      playerId: socket.id
+      playerId: socket.id,
+      playerName
     });
 
     callback({ success: true });
   },
 
+  newRound(socket, data, callback, gameManager, io) {
+    const { roomId } = data;
+    const room = gameManager.getRoom(roomId);
+    if (!room) return callback({ success: false, error: 'Room not found' });
+    if (!room.newRound()) return callback({ success: false, error: 'Impossible de démarrer une nouvelle manche' });
+
+    const gameState = room.getGameState();
+
+    // Broadcast new round to the whole room so no player misses it
+    io.to(`room-${roomId}`).emit('newRound', { gameState });
+
+    // Send each player their hand individually
+    for (const [, player] of room.players) {
+      io.to(player.id).emit('handUpdated', { hand: player.getHand() });
+    }
+
+    callback({ success: true, gameState });
+  },
+
   getRoomInfo(socket, data, callback, gameManager) {
     const roomId = data && data.roomId ? data.roomId : data;
     const room = gameManager.getRoom(roomId);
-    
+
     if (!room) {
       return callback({ success: false, error: 'Room not found' });
     }
 
-    callback({ success: true, gameState: room.getGameState() });
+    // Always (re-)join the socket.io room channel — handles reconnections
+    socket.join(`room-${roomId}`);
+
+    // Include the player's own hand so the client can restore it on mount / reconnect
+    const player = room.players.get(socket.id);
+    const hand = player ? player.getHand() : [];
+
+    console.log(`[getRoomInfo] socket=${socket.id} roomId=${roomId} gameStarted=${room.gameStarted} playerFound=${!!player}`);
+    callback({ success: true, gameState: room.getGameState(), hand });
   }
 };

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './Card.css';
 
-const Card = ({ suit, value, onClick, disabled = false, faceDown = false }) => {
+// playable: true = highlight, false = dim, null = neutral (no sequence active)
+const Card = ({ suit, value, onClick, disabled = false, faceDown = false, playable = null }) => {
   const getSuitSymbol = (suit) => {
     const symbols = {
       'Hearts': '♥',
@@ -20,9 +21,11 @@ const Card = ({ suit, value, onClick, disabled = false, faceDown = false }) => {
     return <div className="card card-back" />;
   }
 
+  const playableClass = playable === true ? 'card-playable' : playable === false ? 'card-unplayable' : '';
+
   return (
     <div
-      className={`card ${disabled ? 'disabled' : ''}`}
+      className={`card ${disabled ? 'disabled' : ''} ${playableClass}`}
       onClick={() => !disabled && onClick && onClick()}
       style={{ color: getSuitColor(suit) }}
     >

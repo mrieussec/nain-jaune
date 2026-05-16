@@ -66,6 +66,10 @@ class SocketService {
     this.socket.emit('leaveRoom', { roomId }, callback);
   }
 
+  newRound(roomId, callback) {
+    this.socket.emit('newRound', { roomId }, callback);
+  }
+
   getRoomInfo(roomId, callback) {
     this.socket.emit('getRoomInfo', { roomId }, callback);
   }
@@ -106,6 +110,14 @@ class SocketService {
 
   onRoomsUpdated(callback) {
     this.socket.on('roomsUpdated', callback);
+  }
+
+  onNewRound(callback) {
+    this.socket.on('newRound', callback);
+  }
+
+  offNewRound() {
+    this.socket.off('newRound');
   }
 
   offPlayerJoined() {

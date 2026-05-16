@@ -49,6 +49,7 @@ io.on('connection', (socket) => {
   socket.on('playCard', (data, callback) => gameHandlers.playCard(socket, data, callback, gameManager, io));
   socket.on('passTurn', (data, callback) => gameHandlers.passTurn(socket, data, callback, gameManager, io));
   socket.on('leaveRoom', (data, callback) => gameHandlers.leaveRoom(socket, data, callback, gameManager, io));
+  socket.on('newRound', (data, callback) => gameHandlers.newRound(socket, data, callback, gameManager, io));
   socket.on('getRoomInfo', (data, callback) => gameHandlers.getRoomInfo(socket, data, callback, gameManager));
   
   // Chat handlers

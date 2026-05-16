@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Chat.css';
 
 const Chat = ({ roomId, playerName, socketService }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     socketService.onMessageReceived((data) => {
@@ -18,6 +19,11 @@ const Chat = ({ roomId, playerName, socketService }) => {
       socketService.offMessageReceived();
     };
   }, [socketService]);
+
+  // Auto-scroll to bottom whenever messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = () => {
     if (input.trim()) {
@@ -34,6 +40,7 @@ const Chat = ({ roomId, playerName, socketService }) => {
             <strong>{msg.playerName}:</strong> {msg.message}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="chat-input">
         <input
