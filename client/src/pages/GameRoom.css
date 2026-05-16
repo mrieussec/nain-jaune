@@ -2,15 +2,16 @@
    Layout principal
 ══════════════════════════════════════════ */
 .game-room-container {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #2d6a4f;
   background-image:
     radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 0%, transparent 60%),
     radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 60%);
-  padding: 12px 16px 8px;
+  padding: 10px 16px 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   box-sizing: border-box;
 }
 
@@ -62,6 +63,19 @@
   gap: 10px;
 }
 
+.btn-mute {
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  line-height: 1;
+}
+.btn-mute:hover { background: rgba(255,255,255,0.25); }
+
 .btn-rules {
   padding: 8px 16px;
   background: rgba(255,255,255,0.15);
@@ -94,8 +108,10 @@
 .game-main {
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .your-turn {
@@ -133,6 +149,7 @@
   background: rgba(0,0,0,0.25);
   border-radius: 12px;
   padding: 10px 12px;
+  flex-shrink: 0;
 }
 
 .strip-turn {
@@ -143,15 +160,13 @@
 }
 
 .strip-cards {
-  overflow-x: auto;
   min-width: 0;
 }
 
 .strip-cards .hand-cards {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 5px;
-  padding-bottom: 4px;
 }
 
 .strip-cards .card {
@@ -166,6 +181,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: 100%;
+  min-height: 0;
 }
 
 /* Salle d'attente */
@@ -184,8 +201,11 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .btn-start {
@@ -209,20 +229,27 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 .nj-board-wrapper {
   position: relative;
-  width: 320px;
+  width: fit-content;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
 }
 
 .nj-board-image {
-  width: 100%;
-  height: auto;
+  height: 100%;
+  max-height: calc(100vh - 140px);
+  width: auto;
   display: block;
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  object-fit: contain;
 }
 
 .nj-pile-overlay {
@@ -279,18 +306,83 @@
   padding: 5px 10px;
   background: rgba(0,0,0,0.25);
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
-.nj-game-msg {
-  color: #fde68a;
-  font-style: italic;
+.nj-board-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-new-round {
+  padding: 10px 20px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: center;
+}
+.btn-new-round:hover { background: #059669; }
+
+.nj-game-over {
+  color: #f87171;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  padding: 8px;
+  background: rgba(248, 113, 113, 0.15);
+  border-radius: 8px;
+}
+
+.round-badge {
+  background: rgba(251,191,36,0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.strip-sequence {
+  font-size: 13px;
+  color: #fbbf24;
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 10px;
+  background: rgba(251,191,36,0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(251,191,36,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.strip-sequence.free-play {
+  color: #86efac;
+  background: rgba(134,239,172,0.1);
+  border-color: rgba(134,239,172,0.25);
+}
+
+.round-over-msg {
+  color: #f87171;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 /* ══════════════════════════════════════════
    Joueurs (droite du plateau)
 ══════════════════════════════════════════ */
 .players-info {
-  flex: 1;
+  flex-shrink: 0;
   min-width: 160px;
 }
 
@@ -330,11 +422,13 @@
 .chat-panel {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-panel .chat-container {
-  height: 100%;
-  min-height: 160px;
+  flex: 1;
+  min-height: 0;
   border-radius: 10px;
 }
 
@@ -388,28 +482,66 @@
 .btn-close-rules:hover { background: #1a472a; }
 
 /* ══════════════════════════════════════════
-   Message flottant
+   Message dans le header
 ══════════════════════════════════════════ */
+.header-message {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 12px;
+}
+
 .game-message {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
   background: #10b981;
   color: white;
-  padding: 12px 28px;
+  padding: 7px 20px;
   border-radius: 8px;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  z-index: 50;
-  font-size: 15px;
-  pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.game-message:hover {
+  background: #059669;
 }
 
 /* ══════════════════════════════════════════
    Responsive
 ══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .game-main { flex-direction: column; }
-  .nj-board-wrapper { width: 100%; }
+  .game-room-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+  .game-main {
+    flex-direction: column;
+    overflow: visible;
+    height: auto;
+  }
+  .game-board {
+    height: auto;
+    width: 100%;
+  }
+  .nj-board-wrapper {
+    width: 100%;
+    flex: none;
+    height: auto;
+  }
+  .nj-board-image {
+    height: auto;
+    max-height: none;
+    width: 100%;
+  }
+  .right-panel {
+    height: auto;
+    overflow: visible;
+  }
+  .chat-panel {
+    min-height: 200px;
+  }
 }
