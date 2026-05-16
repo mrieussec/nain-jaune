@@ -11,11 +11,21 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5001',
+  'https://nain-jaune-online.web.app',
+  'https://nain-jaune-online.firebaseapp.com',
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [])
+];
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST']
-  }
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
 });
 
 const PORT = process.env.PORT || 5000;
