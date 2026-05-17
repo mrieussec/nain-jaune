@@ -610,24 +610,46 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
           <div className="rules-modal" onClick={e => e.stopPropagation()}>
             <h3>📋 Règles du Nain Jaune</h3>
             <div className="rules-content">
-              <h4>Objectif</h4>
+              <h4>🎯 Objectif</h4>
               <p>Être le premier à vider sa main. La partie dure plusieurs manches jusqu'à ce qu'un joueur n'ait plus de jetons.</p>
-              <h4>Séquences</h4>
-              <p>Le joueur actif joue <strong>n'importe quelle carte</strong> (jeu libre). Chaque joueur suivant doit jouer la carte <strong>immédiatement supérieure de même couleur</strong> ou annoncer « Passer ».</p>
-              <p>Quand personne ne peut continuer (carte dans le talon), le dernier à avoir joué <strong>rejoue</strong> librement. Le <strong>Roi</strong> termine aussi la séquence.</p>
-              <h4>Piles spéciales</h4>
-              <p>Poser une carte spéciale rapporte tous les jetons de sa case :</p>
+
+              <h4>🃏 Le donneur</h4>
+              <p>Avec 3 joueurs ou plus, le <strong>donneur ne joue pas</strong> la manche. Il distribue les cartes, paye les mises initiales sur le plateau, mais n'a pas de main. Le rôle de donneur tourne à chaque manche.</p>
+
+              <h4>🟡 Ouverture : le 7♦ obligatoire</h4>
+              <p>La manche <strong>doit toujours s'ouvrir avec le 7♦</strong>. Le joueur qui tient le 7♦ est obligé de jouer cette carte en premier. Si le 7♦ est dans le talon (carte non distribuée), le joueur à gauche du donneur ouvre librement avec la carte de son choix.</p>
+
+              <h4>🔄 Séquences</h4>
+              <p>Le joueur actif joue <strong>n'importe quelle carte</strong> (jeu libre). Chaque joueur suivant doit jouer la carte <strong>immédiatement supérieure de même couleur</strong> ou passer.</p>
+              <p>Le <strong>Roi</strong> termine toujours une séquence — le joueur qui l'a posé rejoue librement.</p>
+
+              <h4>⚠️ Passer</h4>
+              <p>Quand un joueur ne peut pas (ou ne veut pas) jouer, il passe. <strong>Passer coûte 1 jeton</strong> qui est placé dans le pot commun. Ce pot est remporté par le gagnant de la manche.</p>
+
+              <h4>🔒 Brocantage</h4>
+              <p>Quand la suite est bloquée parce que la carte attendue est dans le talon, chaque joueur peut proposer un <strong>brocantage</strong> : payer <em>N−1 jetons</em> (répartis entre les autres joueurs) pour racheter la carte du talon et la jouer immédiatement, relançant la séquence.</p>
+              <p>Si <strong>tous les joueurs refusent</strong> le brocantage, le dernier à avoir proposé reçoit le droit de rejouer <strong>librement</strong> sans payer.</p>
+
+              <h4>⭐ Piles spéciales</h4>
+              <p>Poser une carte spéciale rapporte tous les jetons accumulés sur sa case :</p>
               <ul>
                 <li>10♦ — 1 jeton de départ (s'accumule si non remporté)</li>
                 <li>V♣ — 2 jetons</li>
                 <li>D♠ — 3 jetons</li>
-                <li>R♥ — 4 jetons <em>(et rejouer)</em></li>
-                <li>7♦ (Nain Jaune) — 5 jetons</li>
+                <li>R♥ — 4 jetons <em>(et rejouer librement)</em></li>
+                <li>7♦ Nain Jaune — 5 jetons</li>
               </ul>
-              <h4>Fin de manche</h4>
-              <p>Le gagnant encaisse la valeur des cartes restantes de chaque adversaire (As=1, 2–10=valeur, V/D/R=10). Le joueur tenant encore le 7♦ paie <strong>double</strong>.</p>
-              <h4>Jetons non remportés</h4>
-              <p>Les jetons d'une case non remportée restent et s'accumulent pour la manche suivante.</p>
+
+              <h4>🏆 Fin de manche</h4>
+              <p>Le premier joueur à vider sa main gagne la manche. Il encaisse :</p>
+              <ul>
+                <li>La valeur des cartes restantes de chaque adversaire (As=1, 2–10=valeur faciale, V/D/R=10 pts)</li>
+                <li>Le <strong>pot</strong> accumulé pendant la manche (pénalités de passe)</li>
+              </ul>
+              <p>⚠️ Le joueur tenant encore le <strong>7♦</strong> paie <strong>double</strong> sa valeur en main.</p>
+
+              <h4>📌 Jetons non remportés</h4>
+              <p>Les jetons d'une case spéciale non remportée restent sur la case et s'accumulent pour les manches suivantes.</p>
             </div>
             <button className="btn-close-rules" onClick={() => setShowRules(false)}>Fermer</button>
           </div>
