@@ -13,7 +13,7 @@ export class Room {
     this.players = new Map();
     this.playersOrder = [];
     this.gameStarted = false;
-    this.gameState = 'waiting'; // waiting | playing | roundEnd | finished
+    this.gameState = 'waiting'; // waiting | playing | brocantage | roundEnd | finished
     this.currentPlayerIndex = 0;
     this.dealerIndex = 0;
     this.deck = null;
@@ -26,6 +26,13 @@ export class Room {
     // null means free play (no active sequence)
     this.currentSequence = null;
     this.lastPlayedCard = null; // { suit, value } for display
+
+    // Advanced rules state
+    this.pot = 0;
+    this.brocantageInfo = null; // { blockedCard: {suit, numValue}, lastPlayerId, declinedPlayerIds: [] }
+    this.must7D = false;
+    this.dealerPlayerId = null;
+    this.activePlayerIds = []; // joueurs qui jouent cette manche (sans le donneur si ≥3)
 
     this.specialCards = {
       ten_diamonds:   { value: '10', suit: 'Diamonds', name: '10♦' },
@@ -116,7 +123,7 @@ export class Room {
     return null;
   }
 
-  // Returns true if any player currently holds { suit, numValue }
+  // Returns true if any active player currently holds { suit, numValue }
   hasAnyPlayerCard(suit, numValue) {
     const str = this.valueLabel(numValue);
     return Array.from(this.players.values()).some(p =>
@@ -124,22 +131,21 @@ export class Room {
     );
   }
 
+  // ── Active players helpers ────────────────────────────────────────────────
+
+  // Renvoie les IDs des joueurs actifs en ordre clockwise depuis le joueur après le donneur
+  _getActivePlayerIds() {
+    const n = this.playersOrder.length;
+    if (n <= 2) return [...this.playersOrder];
+    const dealerIdx = this.playersOrder.indexOf(this.dealerPlayerId);
+    const result = [];
+    for (let i = 1; i < n; i++) {
+      result.push(this.playersOrder[(dealerIdx + i) % n]);
+    }
+    return result;
+  }
+
   // ── Sequence logic ────────────────────────────────────────────────────────
-  //
-  // Rules:
-  //   • currentSequence === null  → free play: the active player may play any card
-  //   • currentSequence set       → the active player must play exactly that card,
-  //                                 or pass if they don't hold it
-  //
-  // After a card is played:
-  //   • King played  → sequence ends, same player gets free play
-  //   • Next card in talon (no player holds it) → sequence ends, same player gets free play
-  //   • Otherwise → sequence continues, turn passes to next player
-  //
-  // After a pass:
-  //   • If no remaining player holds the required card → sequence blocked,
-  //     the last player to have played gets free play
-  //   • Otherwise → turn passes to next player
 
   canPlayCard(card) {
     if (!this.currentSequence) return true;
@@ -147,44 +153,13 @@ export class Room {
     return card.suit === suit && this.cardValue(card.value) === nextValue;
   }
 
-  // ── Game lifecycle ────────────────────────────────────────────────────────
+  // ── Round setup ───────────────────────────────────────────────────────────
 
-  startGame() {
-    if (this.players.size < 2 || this.players.size > 6) return false;
-
-    this.gameStarted = true;
-    this.gameState = 'playing';
-    this.round = 1;
-    this.currentPlayerIndex = 0;
-    this.dealerIndex = 0;
-    this.currentSequence = null;
-    this.lastPlayedCard = null;
-    this.isRoundOver = false;
-    this.isGameOver = false;
-
-    this.deck = new Deck();
-    this.dealCards();
-    this.collectBets();
-
-    return true;
-  }
-
-  collectBets() {
-    for (const player of this.players.values()) {
-      const total = 1 + 2 + 3 + 4 + 5;
-      player.points -= total;
-      this.bets.ten_diamonds   += 1;
-      this.bets.jack_clubs     += 2;
-      this.bets.queen_spades   += 3;
-      this.bets.king_hearts    += 4;
-      this.bets.seven_diamonds += 5;
-    }
-  }
-
-  dealCards() {
-    const cardsPerPlayer = Math.floor(52 / this.players.size);
-    for (const playerId of this.playersOrder) {
+  _dealCards() {
+    const cardsPerPlayer = Math.floor(52 / this.activePlayerIds.length);
+    for (const playerId of this.activePlayerIds) {
       const player = this.players.get(playerId);
+      player.hand = [];
       for (let i = 0; i < cardsPerPlayer; i++) {
         const card = this.deck.drawCard();
         if (card) player.addCard(card);
@@ -193,31 +168,73 @@ export class Room {
     this.discard = this.deck.cards.splice(0);
   }
 
-  newRound() {
-    if (this.gameState !== 'roundEnd') return false;
+  // TOUS les joueurs paient (même le donneur)
+  _collectBets() {
+    for (const player of this.players.values()) {
+      player.points -= 15;
+      this.bets.ten_diamonds   += 1;
+      this.bets.jack_clubs     += 2;
+      this.bets.queen_spades   += 3;
+      this.bets.king_hearts    += 4;
+      this.bets.seven_diamonds += 5;
+    }
+  }
 
-    this.round++;
-    this.isRoundOver = false;
+  _setupRound() {
+    this.dealerPlayerId = this.playersOrder[this.dealerIndex];
+    this.activePlayerIds = this._getActivePlayerIds();
+    this.must7D = false;
+    this.brocantageInfo = null;
     this.currentSequence = null;
     this.lastPlayedCard = null;
-    this.message = `Manche ${this.round} — bonne chance !`;
+    this.isRoundOver = false;
 
-    for (const player of this.players.values()) {
-      player.hand = [];
-    }
-    for (const key of Object.keys(this.table)) {
-      this.table[key] = [];
-    }
-
-    // Rotate starting player each round
-    this.dealerIndex = (this.dealerIndex + 1) % this.playersOrder.length;
-    this.currentPlayerIndex = this.dealerIndex;
+    // Vider toutes les mains
+    for (const p of this.players.values()) p.hand = [];
+    for (const key of Object.keys(this.table)) this.table[key] = [];
 
     this.deck = new Deck();
-    this.dealCards();
-    this.collectBets(); // unclaimed bets from previous round accumulate
+    this._dealCards();
+    this._collectBets();
+
+    // Trouver le porteur du 7♦ parmi les joueurs actifs
+    const holderOf7D = this.activePlayerIds.find(id => {
+      const p = this.players.get(id);
+      return p.hand.some(c => c.value === '7' && c.suit === 'Diamonds');
+    });
+
+    if (holderOf7D) {
+      this.currentPlayerIndex = this.activePlayerIds.indexOf(holderOf7D);
+      this.must7D = true;
+      this.message = `${this.players.get(holderOf7D).name} possède le 7♦ et doit commencer.`;
+    } else {
+      this.currentPlayerIndex = 0; // premier joueur actif (gauche du donneur)
+      this.must7D = false;
+      this.message = `Le 7♦ est dans le talon — ${this.players.get(this.activePlayerIds[0]).name} commence librement.`;
+    }
 
     this.gameState = 'playing';
+  }
+
+  // ── Game lifecycle ────────────────────────────────────────────────────────
+
+  startGame() {
+    if (this.players.size < 2 || this.players.size > 6) return false;
+    this.gameStarted = true;
+    this.round = 1;
+    this.dealerIndex = 0;
+    this.pot = 0;
+    this.isGameOver = false;
+    this._setupRound();
+    return true;
+  }
+
+  newRound() {
+    if (this.gameState !== 'roundEnd') return false;
+    this.round++;
+    this.dealerIndex = (this.dealerIndex + 1) % this.playersOrder.length;
+    this._setupRound();
+    this.message = `Manche ${this.round} — ${this.message}`;
     return true;
   }
 
@@ -226,9 +243,20 @@ export class Room {
   playCard(playerId, card) {
     const player = this.players.get(playerId);
     if (!player) return { success: false, error: 'Player not found' };
+
+    if (this.gameState === 'brocantage') return { success: false, error: 'Brocantage en cours' };
     if (this.gameState !== 'playing') return { success: false, error: 'La partie est terminée' };
-    if (this.playersOrder[this.currentPlayerIndex] !== playerId)
+
+    // Vérifier que c'est bien le joueur actif
+    if (this.activePlayerIds[this.currentPlayerIndex] !== playerId)
       return { success: false, error: 'Pas votre tour' };
+
+    // Règle must7D
+    if (this.must7D) {
+      if (!(card.value === '7' && card.suit === 'Diamonds'))
+        return { success: false, error: 'Vous devez commencer avec le 7♦ !' };
+      this.must7D = false;
+    }
 
     const cardIndex = player.hand.findIndex(c => c.suit === card.suit && c.value === card.value);
     if (cardIndex === -1) return { success: false, error: 'Carte introuvable' };
@@ -297,7 +325,10 @@ export class Room {
   passTurn(playerId) {
     const player = this.players.get(playerId);
     if (!player) return { success: false, error: 'Player not found' };
-    if (this.playersOrder[this.currentPlayerIndex] !== playerId)
+
+    if (this.gameState === 'brocantage') return { success: false, error: 'Brocantage en cours' };
+
+    if (this.activePlayerIds[this.currentPlayerIndex] !== playerId)
       return { success: false, error: 'Pas votre tour' };
 
     if (!this.currentSequence) {
@@ -312,19 +343,100 @@ export class Room {
       return { success: false, error: `Vous avez le ${this.valueLabel(nextValue)}${SUIT_SYMBOL[suit]}` };
     }
 
-    this.message = `${player.name} — sans le ${this.cardName(suit, nextValue)}.`;
+    // Pénalité de passe : 1 jeton au pot
+    player.points -= 1;
+    this.pot += 1;
+    this.message = `${player.name} — sans le ${this.cardName(suit, nextValue)}. (-1 jeton)`;
+
     this.nextTurn();
 
-    // If no player holds the required card, sequence is blocked
+    // If no player holds the required card, enter brocantage
     if (!this.hasAnyPlayerCard(suit, nextValue)) {
-      const lastPlayer = this.players.get(this.currentSequence.lastPlayerId);
-      const lastPlayerIndex = this.playersOrder.indexOf(this.currentSequence.lastPlayerId);
+      this.gameState = 'brocantage';
+      this.brocantageInfo = {
+        blockedCard: { suit, numValue: nextValue },
+        lastPlayerId: this.currentSequence.lastPlayerId,
+        declinedPlayerIds: []
+      };
       this.currentSequence = null;
-      this.currentPlayerIndex = lastPlayerIndex;
-      this.message += ` Sans le ${this.cardName(suit, nextValue)} — ${lastPlayer?.name || 'Joueur'} rejoue.`;
+      this.message += ` Le ${this.cardName(suit, nextValue)} est dans le talon — brocantage !`;
     }
 
     return { success: true, type: 'pass' };
+  }
+
+  // ── Brocantage ────────────────────────────────────────────────────────────
+
+  brocanter(playerId) {
+    if (this.gameState !== 'brocantage' || !this.brocantageInfo)
+      return { success: false, error: 'Pas de brocantage en cours' };
+    const player = this.players.get(playerId);
+    if (!player) return { success: false, error: 'Joueur introuvable' };
+
+    const { blockedCard, lastPlayerId } = this.brocantageInfo;
+    const nOthers = this.players.size - 1;
+    player.points -= nOthers;
+    for (const [pid, p] of this.players) {
+      if (pid !== playerId) p.points += 1;
+    }
+
+    const card = { suit: blockedCard.suit, value: this.valueLabel(blockedCard.numValue) };
+    this.lastPlayedCard = card;
+
+    const specialPile = this.getSpecialPileForCard(card);
+    let winnings = 0;
+    if (specialPile) {
+      this.table[specialPile].push(card);
+      winnings = this.bets[specialPile];
+      player.points += winnings;
+      this.bets[specialPile] = 0;
+    }
+
+    this.message = `${player.name} brocante le ${this.cardName(card.suit, card.value)} (-${nOthers} jeton${nOthers > 1 ? 's' : ''}).`;
+    if (winnings > 0) this.message += ` +${winnings} jeton${winnings > 1 ? 's' : ''} !`;
+
+    // Mettre le brocanteur comme joueur courant
+    const idx = this.activePlayerIds.indexOf(playerId);
+    this.currentPlayerIndex = idx >= 0 ? idx : 0;
+
+    const cardVal = this.cardValue(card.value);
+    const isKing = cardVal === 13;
+
+    if (isKing || !this.hasAnyPlayerCard(card.suit, cardVal + 1)) {
+      this.currentSequence = null;
+      this.message += isKing ? ` Roi — ${player.name} rejoue.` : ` ${player.name} rejoue.`;
+    } else {
+      this.currentSequence = { suit: card.suit, nextValue: cardVal + 1, lastPlayerId: playerId };
+      const hasNext = player.hand.some(c => c.suit === card.suit && this.cardValue(c.value) === cardVal + 1);
+      if (!hasNext) this.nextTurn();
+    }
+
+    this.brocantageInfo = null;
+    this.gameState = 'playing';
+    return { success: true, winnings, specialCard: !!specialPile };
+  }
+
+  declineBrocantage(playerId) {
+    if (this.gameState !== 'brocantage' || !this.brocantageInfo)
+      return { success: false, error: 'Pas de brocantage en cours' };
+    const player = this.players.get(playerId);
+    if (!player) return { success: false, error: 'Joueur introuvable' };
+
+    if (!this.brocantageInfo.declinedPlayerIds.includes(playerId))
+      this.brocantageInfo.declinedPlayerIds.push(playerId);
+
+    if (this.brocantageInfo.declinedPlayerIds.length >= this.players.size) {
+      const { lastPlayerId } = this.brocantageInfo;
+      const lastPlayer = this.players.get(lastPlayerId);
+      const lastIdx = this.activePlayerIds.indexOf(lastPlayerId);
+      this.currentPlayerIndex = lastIdx >= 0 ? lastIdx : 0;
+      this.currentSequence = null;
+      this.message = `Personne ne brocante — ${lastPlayer?.name || 'Joueur'} rejoue librement.`;
+      this.brocantageInfo = null;
+      this.gameState = 'playing';
+      return { success: true, resolved: true };
+    }
+    return { success: true, resolved: false };
   }
 
   endRound(winnerId) {
@@ -341,7 +453,12 @@ export class Room {
       player.points = Math.max(0, player.points - penalty);
       winnerGain += penalty;
     }
+
+    // Winner receives the pot in addition to normal gain
+    winnerGain += this.pot;
     winner.points += winnerGain;
+    const potMsg = this.pot > 0 ? ` (dont ${this.pot} du pot)` : '';
+    this.pot = 0;
 
     this.isRoundOver = true;
     const anyEliminated = Array.from(this.players.values()).some(p => p.points <= 0);
@@ -349,21 +466,21 @@ export class Room {
     if (anyEliminated) {
       this.gameState = 'finished';
       this.isGameOver = true;
-      this.message = `${winner.name} remporte la manche (+${winnerGain} jeton${winnerGain > 1 ? 's' : ''}) ! Un joueur est éliminé. Partie terminée !`;
+      this.message = `${winner.name} remporte la manche (+${winnerGain}${potMsg}) ! Un joueur est éliminé. Partie terminée !`;
     } else {
       this.gameState = 'roundEnd';
-      this.message = `${winner.name} remporte la manche (+${winnerGain} jeton${winnerGain > 1 ? 's' : ''}) !`;
+      this.message = `${winner.name} remporte la manche (+${winnerGain}${potMsg}) !`;
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   nextTurn() {
-    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.playersOrder.length;
+    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.activePlayerIds.length;
   }
 
   getCurrentPlayer() {
-    return this.players.get(this.playersOrder[this.currentPlayerIndex]);
+    return this.players.get(this.activePlayerIds[this.currentPlayerIndex]);
   }
 
   getGameState() {
@@ -372,7 +489,7 @@ export class Room {
       gameStarted: this.gameStarted,
       gameState: this.gameState,
       currentPlayerIndex: this.currentPlayerIndex,
-      currentPlayerId: this.playersOrder[this.currentPlayerIndex],
+      currentPlayerId: this.activePlayerIds[this.currentPlayerIndex] || null,
       players: Array.from(this.players.values()).map(p => ({
         id: p.id,
         name: p.name,
@@ -389,6 +506,16 @@ export class Room {
       isRoundOver: this.isRoundOver,
       currentSequence: this.currentSequence,
       lastPlayedCard: this.lastPlayedCard,
+      // Advanced rules
+      pot: this.pot,
+      must7D: this.must7D,
+      dealerPlayerId: this.dealerPlayerId,
+      activePlayerIds: this.activePlayerIds,
+      brocantageInfo: this.brocantageInfo ? {
+        suit: this.brocantageInfo.blockedCard.suit,
+        numValue: this.brocantageInfo.blockedCard.numValue,
+        declinedCount: this.brocantageInfo.declinedPlayerIds.length,
+      } : null,
     };
   }
 }

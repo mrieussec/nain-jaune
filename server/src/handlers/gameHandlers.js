@@ -152,6 +152,72 @@ export const gameHandlers = {
     callback({ success: true, gameState });
   },
 
+  brocanter(socket, data, callback, gameManager, io) {
+    const { roomId } = data;
+    const room = gameManager.getRoom(roomId);
+    if (!room) {
+      return callback({ success: false, error: 'Room not found' });
+    }
+
+    const result = room.brocanter(socket.id);
+    if (!result.success) {
+      return callback(result);
+    }
+
+    const gameState = room.getGameState();
+    const playerStates = Array.from(room.players.values()).map(p => ({
+      id: p.id,
+      name: p.name,
+      handSize: p.getHandSize(),
+      points: p.points
+    }));
+
+    io.to(`room-${roomId}`).emit('cardPlayed', {
+      playerId: socket.id,
+      card: room.lastPlayedCard,
+      result: 'brocantage',
+      winnings: result.winnings || 0,
+      specialCard: result.specialCard || false,
+      gameState,
+      players: playerStates,
+      message: room.message,
+      gameOver: room.isGameOver
+    });
+
+    callback({ success: true, gameState });
+  },
+
+  declineBrocantage(socket, data, callback, gameManager, io) {
+    const { roomId } = data;
+    const room = gameManager.getRoom(roomId);
+    if (!room) {
+      return callback({ success: false, error: 'Room not found' });
+    }
+
+    const result = room.declineBrocantage(socket.id);
+    if (!result.success) {
+      return callback(result);
+    }
+
+    const gameState = room.getGameState();
+    const playerStates = Array.from(room.players.values()).map(p => ({
+      id: p.id,
+      name: p.name,
+      handSize: p.getHandSize(),
+      points: p.points
+    }));
+
+    io.to(`room-${roomId}`).emit('turnPassed', {
+      playerId: socket.id,
+      resolved: result.resolved,
+      gameState,
+      players: playerStates,
+      message: room.message
+    });
+
+    callback({ success: true, resolved: result.resolved, gameState });
+  },
+
   leaveRoom(socket, data, callback, gameManager, io) {
     const { roomId } = data;
 

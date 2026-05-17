@@ -545,3 +545,78 @@
     min-height: 200px;
   }
 }
+
+/* ══════════════════════════════════════════
+   Brocantage
+══════════════════════════════════════════ */
+.brocantage-panel {
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brocantage-info {
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.brocantage-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-brocanter {
+  padding: 7px 14px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-brocanter:hover { background: #059669; }
+
+.btn-decline-brocantage {
+  padding: 7px 14px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-decline-brocantage:hover { background: rgba(255,255,255,0.25); }
+
+/* ══════════════════════════════════════════
+   Dealer badge & Pot
+══════════════════════════════════════════ */
+.dealer-badge {
+  font-size: 11px;
+  background: rgba(251,191,36,0.2);
+  color: #fbbf24;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(251,191,36,0.4);
+  margin-left: 4px;
+}
+
+.pot-info {
+  font-size: 12px;
+  color: #fbbf24;
+  text-align: center;
+  padding: 4px 8px;
+  background: rgba(251,191,36,0.1);
+  border-radius: 6px;
+  margin-top: 4px;
+}

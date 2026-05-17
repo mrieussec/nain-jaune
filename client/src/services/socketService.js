@@ -75,6 +75,14 @@ class SocketService {
     this.socket.emit('getRoomInfo', { roomId }, callback);
   }
 
+  brocanter(roomId, callback) {
+    this.socket.emit('brocanter', { roomId }, callback);
+  }
+
+  declineBrocantage(roomId, callback) {
+    this.socket.emit('declineBrocantage', { roomId }, callback);
+  }
+
   // Chat events
   sendMessage(roomId, message, playerName) {
     this.socket.emit('sendMessage', { roomId, message, playerName });

@@ -61,6 +61,8 @@ io.on('connection', (socket) => {
   socket.on('leaveRoom', (data, callback) => gameHandlers.leaveRoom(socket, data, callback, gameManager, io));
   socket.on('newRound', (data, callback) => gameHandlers.newRound(socket, data, callback, gameManager, io));
   socket.on('getRoomInfo', (data, callback) => gameHandlers.getRoomInfo(socket, data, callback, gameManager));
+  socket.on('brocanter', (data, callback) => gameHandlers.brocanter(socket, data, callback, gameManager, io));
+  socket.on('declineBrocantage', (data, callback) => gameHandlers.declineBrocantage(socket, data, callback, gameManager, io));
   
   // Chat handlers
   socket.on('sendMessage', (data) => chatHandlers.sendMessage(socket, data, io));

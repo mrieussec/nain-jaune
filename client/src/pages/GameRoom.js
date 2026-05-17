@@ -60,6 +60,7 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
   // ── Sequence helpers (mirrors server logic) ───────────────────────────────
 
   const canPlayCard = (card) => {
+    if (gameState?.must7D) return card.value === '7' && card.suit === 'Diamonds';
     const seq = gameState?.currentSequence;
     if (!seq) return true; // free play: any card
     return card.suit === seq.suit && VALUE_ORDER[card.value] === seq.nextValue;
@@ -406,6 +407,14 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
     });
   };
 
+  const handleBrocanter = () => {
+    socketService.brocanter(roomId, (r) => { if (!r.success) setMessage(r.error || 'Erreur'); });
+  };
+
+  const handleDeclineBrocantage = () => {
+    socketService.declineBrocantage(roomId, (r) => { if (!r.success) setMessage(r.error || 'Erreur'); });
+  };
+
   const handleLeaveRoom = () => {
     socketService.leaveRoom(roomId, () => onNavigate('home', {}));
   };
@@ -427,6 +436,7 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
   const seq = gameState.currentSequence;
   const isRoundOver = gameState.gameState === 'roundEnd';
   const isGameOver  = gameState.gameState === 'finished';
+  const isBrocantage = gameState.gameState === 'brocantage';
 
   return (
     <div className="game-room-container">
@@ -442,6 +452,9 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
           {message && <div className="game-message" onClick={() => setMessage('')}>{message}</div>}
         </div>
         <div className="header-buttons">
+          {isRoundOver && (
+            <button className="btn-new-round" onClick={handleNewRound}>▶ Nouvelle manche</button>
+          )}
           <button className="btn-mute" onClick={() => { setMuted(m => !m); window.speechSynthesis?.cancel(); }} title={muted ? 'Activer la voix' : 'Couper la voix'}>
             {muted ? '🔇' : '🔊'}
           </button>
@@ -487,16 +500,9 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
               </div>
 
               {/* Boutons de fin de manche / partie */}
-              {(isRoundOver || isGameOver) && (
+              {isGameOver && (
                 <div className="nj-board-footer">
-                  {isRoundOver && (
-                    <button className="btn-new-round" onClick={handleNewRound}>
-                      ▶ Nouvelle manche
-                    </button>
-                  )}
-                  {isGameOver && (
-                    <div className="nj-game-over">🏁 Partie terminée !</div>
-                  )}
+                  <div className="nj-game-over">🏁 Partie terminée !</div>
                 </div>
               )}
             </>
@@ -519,11 +525,18 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
             <h3>Joueurs</h3>
             {gameState.players.map((p) => (
               <div key={p.id} className={`player-info ${p.id === gameState.currentPlayerId && !isRoundOver && !isGameOver ? 'current' : ''}`}>
-                <span>{p.id === gameState.currentPlayerId && !isRoundOver && !isGameOver ? '▶ ' : ''}{p.name}</span>
+                <span>
+                  {p.id === gameState.currentPlayerId && !isRoundOver && !isGameOver ? '▶ ' : ''}
+                  {p.name}
+                  {p.id === gameState.dealerPlayerId && <span className="dealer-badge">🃏</span>}
+                </span>
                 <span className="hand-size">{p.handSize} cartes</span>
                 <span className="points">💰 {p.points}</span>
               </div>
             ))}
+            {gameState.pot > 0 && (
+              <div className="pot-info">💰 Pot : {gameState.pot} jeton{gameState.pot > 1 ? 's' : ''}</div>
+            )}
           </div>
 
           {/* Main du joueur */}
@@ -533,8 +546,15 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
                 <span className="round-over-msg">Manche terminée</span>
               )}
 
+              {/* Indicateur must7D */}
+              {isCurrentPlayer && !isRoundOver && gameState?.must7D && (
+                <div className="strip-sequence">
+                  Vous devez jouer le <strong>7♦</strong> (Nain Jaune) pour commencer
+                </div>
+              )}
+
               {/* Indicateur séquence dans le panneau joueur */}
-              {isCurrentPlayer && !isRoundOver && seq && (
+              {isCurrentPlayer && !isRoundOver && !gameState?.must7D && seq && (
                 <div className="strip-sequence">
                   {canPass() ? (
                     <>
@@ -546,16 +566,31 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
                   )}
                 </div>
               )}
-              {isCurrentPlayer && !isRoundOver && !seq && (
+              {isCurrentPlayer && !isRoundOver && !gameState?.must7D && !seq && !isBrocantage && (
                 <div className="strip-sequence free-play">Jeu libre — choisissez n'importe quelle carte</div>
+              )}
+
+              {/* Panel brocantage */}
+              {isBrocantage && gameState.brocantageInfo && (
+                <div className="brocantage-panel">
+                  <div className="brocantage-info">
+                    🃏 <strong>{seqLabel(gameState.brocantageInfo.numValue)}{SUIT_SYMBOL[gameState.brocantageInfo.suit]}</strong> dans le talon — brocantage !
+                  </div>
+                  <div className="brocantage-actions">
+                    <button className="btn-brocanter" onClick={handleBrocanter}>
+                      Brocanter ({gameState.players.length - 1} jeton{gameState.players.length - 1 > 1 ? 's' : ''})
+                    </button>
+                    <button className="btn-decline-brocantage" onClick={handleDeclineBrocantage}>Refuser</button>
+                  </div>
+                </div>
               )}
 
               <div className="strip-cards">
                 <PlayerHand
                   cards={playerHand}
                   onCardClick={handlePlayCard}
-                  disabled={!isCurrentPlayer || isRoundOver}
-                  canPlayCard={isCurrentPlayer && !isRoundOver ? canPlayCard : null}
+                  disabled={!isCurrentPlayer || isRoundOver || isBrocantage}
+                  canPlayCard={isCurrentPlayer && !isRoundOver && !isBrocantage ? canPlayCard : null}
                 />
               </div>
             </div>
