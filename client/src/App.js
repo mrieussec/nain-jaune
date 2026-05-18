@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Home from './pages/Home';
 import GameRoom from './pages/GameRoom';
+import Stats from './pages/Stats';
 import './App.css';
 
 function App() {
@@ -23,6 +24,9 @@ function App() {
           playerName={pageData.playerName}
           onNavigate={handleNavigate}
         />
+      )}
+      {currentPage === 'stats' && (
+        <Stats onNavigate={handleNavigate} />
       )}
     </div>
   );

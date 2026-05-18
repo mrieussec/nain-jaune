@@ -85,6 +85,10 @@ const Home = ({ onNavigate }) => {
           </div>
         )}
 
+        <button className="btn-stats" onClick={() => onNavigate('stats', {})}>
+          📊 Classement
+        </button>
+
         <div className="rooms-section">
           <h2>Parties disponibles</h2>
           {rooms.length === 0 ? (

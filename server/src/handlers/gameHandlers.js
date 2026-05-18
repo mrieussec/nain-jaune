@@ -81,19 +81,42 @@ export const gameHandlers = {
     callback({ success: true, gameState });
   },
 
-  playCard(socket, data, callback, gameManager, io) {
+  playCard(socket, data, callback, gameManager, io, statsManager) {
     const { roomId, card } = data;
     const room = gameManager.getRoom(roomId);
-    
+
     if (!room) {
       return callback({ success: false, error: 'Room not found' });
     }
 
     const result = room.playCard(socket.id, card);
-    
+
     if (!result.success) {
       return callback(result);
     }
+
+    // ── Stats hooks ────────────────────────────────────────────────────────
+    if (statsManager) {
+      const playerName = room.players.get(socket.id)?.name;
+      if (result.specialCard && result.pileKey && playerName) {
+        statsManager.recordSpecialCard({ playerName, pileKey: result.pileKey });
+      }
+      if (result.type === 'roundEnd') {
+        const winnerName = room.players.get(socket.id)?.name || playerName;
+        const loserNames = [...room.players.values()]
+          .filter(p => p.id !== socket.id)
+          .map(p => p.name);
+        statsManager.recordRoundEnd({ winnerName, loserNames, roundGain: result.roundGain ?? 0 });
+        if (result.gameOver) {
+          const allNames = [...room.players.values()].map(p => p.name);
+          statsManager.recordGameEnd({ allPlayerNames: allNames });
+          for (const p of room.players.values()) {
+            if (p.points <= 0) statsManager.recordElimination({ playerName: p.name });
+          }
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     const gameState = room.getGameState();
     const playerStates = Array.from(room.players.values()).map(p => ({
@@ -152,7 +175,7 @@ export const gameHandlers = {
     callback({ success: true, gameState });
   },
 
-  brocanter(socket, data, callback, gameManager, io) {
+  brocanter(socket, data, callback, gameManager, io, statsManager) {
     const { roomId } = data;
     const room = gameManager.getRoom(roomId);
     if (!room) {
@@ -163,6 +186,16 @@ export const gameHandlers = {
     if (!result.success) {
       return callback(result);
     }
+
+    // ── Stats hook ─────────────────────────────────────────────────────────
+    if (statsManager) {
+      const playerName = room.players.get(socket.id)?.name;
+      if (playerName) statsManager.recordBrocantage({ playerName });
+      if (result.specialCard && result.pileKey && playerName) {
+        statsManager.recordSpecialCard({ playerName, pileKey: result.pileKey });
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     const gameState = room.getGameState();
     const playerStates = Array.from(room.players.values()).map(p => ({
@@ -187,7 +220,7 @@ export const gameHandlers = {
     callback({ success: true, gameState });
   },
 
-  declineBrocantage(socket, data, callback, gameManager, io) {
+  declineBrocantage(socket, data, callback, gameManager, io, statsManager) {
     const { roomId } = data;
     const room = gameManager.getRoom(roomId);
     if (!room) {
@@ -198,6 +231,13 @@ export const gameHandlers = {
     if (!result.success) {
       return callback(result);
     }
+
+    // ── Stats hook ─────────────────────────────────────────────────────────
+    if (statsManager) {
+      const playerName = room.players.get(socket.id)?.name;
+      if (playerName) statsManager.recordBrocantageDeclined({ playerName });
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     const gameState = room.getGameState();
     const playerStates = Array.from(room.players.values()).map(p => ({

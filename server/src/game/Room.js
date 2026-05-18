@@ -289,8 +289,8 @@ export class Room {
     }
 
     if (player.hand.length === 0) {
-      this.endRound(playerId);
-      return { success: true, type: 'roundEnd', pileKey, winnings, specialCard: !!specialPile, winnerId: playerId, gameOver: this.isGameOver };
+      const roundResult = this.endRound(playerId);
+      return { success: true, type: 'roundEnd', pileKey, winnings, specialCard: !!specialPile, winnerId: playerId, gameOver: this.isGameOver, roundGain: roundResult?.gain ?? 0 };
     }
 
     const cardVal = this.cardValue(card.value);
@@ -471,6 +471,8 @@ export class Room {
       this.gameState = 'roundEnd';
       this.message = `${winner.name} remporte la manche (+${winnerGain}${potMsg}) !`;
     }
+
+    return { gain: winnerGain };
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

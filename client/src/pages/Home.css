@@ -242,6 +242,25 @@
   cursor: not-allowed;
 }
 
+.btn-stats {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: #2d6a4f;
+  border: 2px solid #2d6a4f;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.btn-stats:hover {
+  background: #2d6a4f;
+  color: #fff;
+}
+
 /* ── Responsive ── */
 @media (max-width: 820px) {
   .home-container {
@@ -259,3 +278,4 @@
     max-width: 440px;
   }
 }
+

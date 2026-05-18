@@ -7,3 +7,4 @@ build/
 *.log
 .next
 out/
+server/data/stats.json
