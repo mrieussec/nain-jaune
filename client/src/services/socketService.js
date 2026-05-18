@@ -51,6 +51,10 @@ class SocketService {
     this.socket.emit('joinRoom', { roomId, playerName }, callback);
   }
 
+  joinAsSpectator(roomId, playerName, callback) {
+    this.socket.emit('joinAsSpectator', { roomId, playerName }, callback);
+  }
+
   startGame(roomId, callback) {
     this.socket.emit('startGame', { roomId }, callback);
   }
@@ -160,6 +164,11 @@ class SocketService {
   offRoomsUpdated() {
     this.socket.off('roomsUpdated');
   }
+
+  onSpectatorJoined(callback) { this.socket.on('spectatorJoined', callback); }
+  onSpectatorLeft(callback)   { this.socket.on('spectatorLeft',   callback); }
+  offSpectatorJoined()        { this.socket.off('spectatorJoined'); }
+  offSpectatorLeft()          { this.socket.off('spectatorLeft');   }
 }
 
 export default new SocketService();

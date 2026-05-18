@@ -242,6 +242,36 @@
   cursor: not-allowed;
 }
 
+.room-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.btn-watch {
+  padding: 7px 14px;
+  background: transparent;
+  color: #2d6a4f;
+  border: 1px solid #2d6a4f;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-watch:hover {
+  background: #2d6a4f;
+  color: #fff;
+}
+
+.spectator-count {
+  color: #888;
+  font-size: 12px;
+}
+
 .btn-stats {
   width: 100%;
   padding: 10px;

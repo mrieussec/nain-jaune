@@ -258,11 +258,48 @@ export const gameHandlers = {
     callback({ success: true, resolved: result.resolved, gameState });
   },
 
+  joinAsSpectator(socket, data, callback, gameManager, io) {
+    const { roomId, playerName } = data;
+
+    if (!roomId || !playerName) {
+      return callback({ success: false, error: 'Room ID and name required' });
+    }
+
+    const result = gameManager.joinAsSpectator(roomId, socket.id, playerName);
+    if (!result.success) return callback(result);
+
+    socket.join(`room-${roomId}`);
+    const room = gameManager.getRoom(roomId);
+
+    io.to(`room-${roomId}`).emit('spectatorJoined', {
+      spectator: { id: socket.id, name: playerName },
+      spectators: Array.from(room.spectators.values()),
+    });
+    io.emit('roomsUpdated', { rooms: gameManager.getRoomsInfo() });
+    callback({ success: true, roomId, gameState: room.getGameState() });
+  },
+
   leaveRoom(socket, data, callback, gameManager, io) {
     const { roomId } = data;
 
-    // Récupérer le nom avant suppression
+    // Check if leaving socket is a spectator
     const room = gameManager.getRoom(roomId);
+    const isSpectator = room?.spectators.has(socket.id);
+
+    if (isSpectator) {
+      const spectatorName = room.spectators.get(socket.id)?.name || null;
+      gameManager.removeSpectator(socket.id);
+      socket.leave(`room-${roomId}`);
+      io.emit('roomsUpdated', { rooms: gameManager.getRoomsInfo() });
+      io.to(`room-${roomId}`).emit('spectatorLeft', {
+        spectatorId: socket.id,
+        spectatorName,
+        spectators: room ? Array.from(room.spectators.values()) : [],
+      });
+      return callback({ success: true });
+    }
+
+    // Regular player
     const leavingPlayer = room?.players.get(socket.id);
     const playerName = leavingPlayer?.name || null;
 

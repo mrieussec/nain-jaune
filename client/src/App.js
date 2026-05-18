@@ -22,6 +22,7 @@ function App() {
         <GameRoom
           roomId={pageData.roomId}
           playerName={pageData.playerName}
+          isSpectator={pageData.isSpectator || false}
           onNavigate={handleNavigate}
         />
       )}

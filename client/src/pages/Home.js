@@ -44,6 +44,15 @@ const Home = ({ onNavigate }) => {
     }
   };
 
+  const handleWatchRoom = (roomId) => {
+    const name = playerName.trim() || 'Spectateur';
+    socketService.joinAsSpectator(roomId, name, (response) => {
+      if (response.success) {
+        onNavigate('game', { roomId, playerName: name, isSpectator: true });
+      }
+    });
+  };
+
   return (
     <div className="home-container">
 
@@ -99,16 +108,30 @@ const Home = ({ onNavigate }) => {
                 <div key={room.id} className="room-card">
                   <div className="room-info">
                     <h3>{room.name}</h3>
-                    <p>{room.players}/{room.maxPlayers} joueurs</p>
+                    <p>
+                      {room.players}/{room.maxPlayers} joueurs
+                      {room.spectators > 0 && <span className="spectator-count"> · 👁 {room.spectators}</span>}
+                    </p>
                     {room.gameStarted && <span className="badge-started">En cours</span>}
                   </div>
-                  <button
-                    className="btn-join"
-                    onClick={() => handleJoinRoom(room.id)}
-                    disabled={!playerName.trim() || room.isFull || room.gameStarted}
-                  >
-                    Rejoindre
-                  </button>
+                  <div className="room-actions">
+                    {!room.gameStarted && (
+                      <button
+                        className="btn-join"
+                        onClick={() => handleJoinRoom(room.id)}
+                        disabled={!playerName.trim() || room.isFull || room.gameStarted}
+                      >
+                        Rejoindre
+                      </button>
+                    )}
+                    <button
+                      className="btn-watch"
+                      onClick={() => handleWatchRoom(room.id)}
+                      title="Regarder la partie"
+                    >
+                      👁 Regarder
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

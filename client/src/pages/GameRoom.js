@@ -15,7 +15,7 @@ const cardLabel = (value) => VALUE_LABEL[VALUE_ORDER[value]] || value;
 const seqLabel  = (num)   => VALUE_LABEL[num] || String(num);
 
 
-const GameRoom = ({ roomId, playerName, onNavigate }) => {
+const GameRoom = ({ roomId, playerName, isSpectator = false, onNavigate }) => {
   const [gameState, setGameState]         = useState(null);
   const [gameStarted, setGameStarted]     = useState(false);
   const [playerHand, setPlayerHand]       = useState([]);
@@ -328,6 +328,14 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
       setMessage(`${name} a quitté la partie.`);
     });
 
+    socketService.onSpectatorJoined((data) => {
+      setGameState(prev => prev ? { ...prev, spectators: data.spectators } : prev);
+    });
+
+    socketService.onSpectatorLeft((data) => {
+      setGameState(prev => prev ? { ...prev, spectators: data.spectators } : prev);
+    });
+
     // Re-sync state on socket reconnection (handles brief disconnections)
     socketService.socket.on('connect', syncRoomState);
 
@@ -339,6 +347,8 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
       socketService.offTurnPassed();
       socketService.offNewRound();
       socketService.offPlayerLeft();
+      socketService.offSpectatorJoined();
+      socketService.offSpectatorLeft();
       socketService.socket.off('connect', syncRoomState);
       window.speechSynthesis?.cancel();
     };
@@ -447,12 +457,13 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
           <img src={logoImage} alt="Nain Jaune" className="header-logo-img" />
           <h1>Nain Jaune</h1>
           {gameStarted && <span className="round-badge">Manche {gameState.round}</span>}
+          {isSpectator && <span className="spectator-badge">👁 Spectateur</span>}
         </div>
         <div className="header-message">
           {message && <div className="game-message" onClick={() => setMessage('')}>{message}</div>}
         </div>
         <div className="header-buttons">
-          {isRoundOver && (
+          {!isSpectator && isRoundOver && (
             <button className="btn-new-round" onClick={handleNewRound}>▶ Nouvelle manche</button>
           )}
           <button className="btn-mute" onClick={() => { setMuted(m => !m); window.speechSynthesis?.cancel(); }} title={muted ? 'Activer la voix' : 'Couper la voix'}>
@@ -510,7 +521,7 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
             <div className="waiting-room">
               <h2>En attente du début de la partie</h2>
               <p>Joueurs : {gameState.players.map(p => p.name).join(', ')}</p>
-              {gameState.players.length >= 2 && (
+              {gameState.players.length >= 2 && !isSpectator && (
                 <button className="btn-start" onClick={handleStartGame}>Démarrer la partie</button>
               )}
             </div>
@@ -539,8 +550,8 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
             )}
           </div>
 
-          {/* Main du joueur */}
-          {gameStarted && !isGameOver && (
+          {/* Main du joueur (masquée pour les spectateurs) */}
+          {gameStarted && !isGameOver && !isSpectator && (
             <div className="player-strip">
               {isRoundOver && (
                 <span className="round-over-msg">Manche terminée</span>
@@ -593,6 +604,23 @@ const GameRoom = ({ roomId, playerName, onNavigate }) => {
                   canPlayCard={isCurrentPlayer && !isRoundOver && !isBrocantage ? canPlayCard : null}
                 />
               </div>
+            </div>
+          )}
+
+          {/* Bandeau spectateur */}
+          {isSpectator && (
+            <div className="spectator-strip">
+              👁 Vous observez cette partie
+            </div>
+          )}
+
+          {/* Liste des spectateurs */}
+          {gameState.spectators?.length > 0 && (
+            <div className="spectators-info">
+              <h4>👁 Spectateurs ({gameState.spectators.length})</h4>
+              {gameState.spectators.map(s => (
+                <div key={s.id} className="spectator-item">{s.name}</div>
+              ))}
             </div>
           )}
 

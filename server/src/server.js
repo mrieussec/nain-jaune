@@ -67,6 +67,7 @@ io.on('connection', (socket) => {
   // Game handlers
   socket.on('createRoom', (data, callback) => gameHandlers.createRoom(socket, data, callback, gameManager, io));
   socket.on('joinRoom', (data, callback) => gameHandlers.joinRoom(socket, data, callback, gameManager, io));
+  socket.on('joinAsSpectator', (data, callback) => gameHandlers.joinAsSpectator(socket, data, callback, gameManager, io));
   socket.on('startGame', (data, callback) => gameHandlers.startGame(socket, data, callback, gameManager, io));
   socket.on('playCard', (data, callback) => gameHandlers.playCard(socket, data, callback, gameManager, io, statsManager));
   socket.on('passTurn', (data, callback) => gameHandlers.passTurn(socket, data, callback, gameManager, io));

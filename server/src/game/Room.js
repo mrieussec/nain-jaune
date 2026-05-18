@@ -34,6 +34,9 @@ export class Room {
     this.dealerPlayerId = null;
     this.activePlayerIds = []; // joueurs qui jouent cette manche (sans le donneur si ≥3)
 
+    // Spectators : Map socketId → { id, name }
+    this.spectators = new Map();
+
     this.specialCards = {
       ten_diamonds:   { value: '10', suit: 'Diamonds', name: '10♦' },
       jack_clubs:     { value: 'J',  suit: 'Clubs',    name: 'V♣' },
@@ -82,7 +85,16 @@ export class Room {
   }
 
   isFull()  { return this.players.size >= this.maxPlayers; }
-  isEmpty() { return this.players.size === 0; }
+  isEmpty() { return this.players.size === 0 && this.spectators.size === 0; }
+
+  addSpectator(socketId, name) {
+    this.spectators.set(socketId, { id: socketId, name });
+    return true;
+  }
+
+  removeSpectator(socketId) {
+    this.spectators.delete(socketId);
+  }
 
   // ── Card helpers ─────────────────────────────────────────────────────────
 
@@ -508,6 +520,8 @@ export class Room {
       isRoundOver: this.isRoundOver,
       currentSequence: this.currentSequence,
       lastPlayedCard: this.lastPlayedCard,
+      // Spectators
+      spectators: Array.from(this.spectators.values()),
       // Advanced rules
       pot: this.pot,
       must7D: this.must7D,
