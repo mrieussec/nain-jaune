@@ -33,6 +33,25 @@ Le Nain Jaune est un jeu de cartes traditionnel français pour 2 à 6 joueurs. L
 - Badge donneur, affichage du pot, indicateur de brocantage
 - Reconnexion automatique avec restauration de la main
 
+### Mode spectateur
+- Bouton "👁 Regarder" sur chaque salle depuis le lobby
+- Vue en temps réel du plateau, des joueurs et de la séquence en cours
+- Aucune action de jeu possible (mains et boutons masqués)
+- Liste des spectateurs visible par tous les participants
+- Compteur de spectateurs affiché dans le lobby
+- Chat accessible aux spectateurs
+
+### Scores & statistiques persistantes
+- Classement global accessible depuis l'écran d'accueil
+- Statistiques par joueur : victoires, parties jouées, taux de victoire, meilleur gain, cases spéciales collectées, brocantages, éliminations
+- Fiche détaillée par joueur avec historique des cases spéciales
+- API REST : `GET /api/stats` · `GET /api/stats/:name`
+- Persistance JSON côté serveur
+
+### Tests automatisés
+- **133 tests** (Vitest) couvrant toute la logique serveur
+- Deck, Player, GameManager, Room (séquences, brocantage, spectateurs, fin de manche…), StatsManager
+
 ---
 
 ## 🚀 Démarrage local
@@ -60,6 +79,12 @@ cd server && npm run dev
 cd client && npm start
 ```
 
+### Lancer les tests
+
+```bash
+cd server && npm test
+```
+
 ---
 
 ## 📁 Structure du projet
@@ -70,20 +95,27 @@ NainJaune/
 │   ├── src/
 │   │   ├── server.js               # Point d'entrée, Socket.io, CORS
 │   │   ├── game/
-│   │   │   ├── GameManager.js      # Gestion des salles
+│   │   │   ├── GameManager.js      # Gestion des salles et spectateurs
 │   │   │   ├── Room.js             # Logique complète d'une partie
 │   │   │   ├── Player.js           # Données des joueurs
 │   │   │   └── Deck.js             # Gestion du deck
-│   │   └── handlers/
-│   │       ├── gameHandlers.js     # Événements du jeu
-│   │       └── chatHandlers.js     # Chat
+│   │   │   └── __tests__/          # Tests unitaires (Vitest)
+│   │   ├── handlers/
+│   │   │   ├── gameHandlers.js     # Événements du jeu
+│   │   │   └── chatHandlers.js     # Chat
+│   │   └── stats/
+│   │       ├── StatsManager.js     # Persistance des statistiques
+│   │       └── __tests__/          # Tests StatsManager
+│   ├── data/
+│   │   └── stats.json              # Données de stats (ignoré par git)
 │   └── package.json
 ├── client/
 │   ├── src/
 │   │   ├── App.js
 │   │   ├── pages/
 │   │   │   ├── Home.js             # Écran d'accueil / lobby
-│   │   │   └── GameRoom.js         # Interface de jeu principale
+│   │   │   ├── GameRoom.js         # Interface de jeu principale
+│   │   │   └── Stats.js            # Page classement & statistiques
 │   │   ├── components/
 │   │   │   ├── Card.js             # Composant carte
 │   │   │   ├── PlayerHand.js       # Main du joueur local
@@ -103,6 +135,7 @@ NainJaune/
 | Frontend | React, CSS3, Web Audio API |
 | Backend | Node.js, Express |
 | Temps réel | Socket.io |
+| Tests | Vitest |
 | Déploiement frontend | Firebase Hosting |
 | Déploiement backend | Render |
 
@@ -112,9 +145,9 @@ NainJaune/
 
 - [x] Système de scores et statistiques persistantes
 - [x] Tests unitaires et d'intégration
+- [x] Mode spectateur
 - [ ] Authentification utilisateur
 - [ ] Historique des parties
-- [ ] Mode spectateur
 
 ---
 
