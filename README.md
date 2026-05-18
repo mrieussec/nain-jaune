@@ -1,51 +1,66 @@
 # Nain Jaune Online
 
-Une version en ligne et multijoueur du jeu de société français classique "Nain Jaune" (Yellow Dwarf).
+Une version en ligne et multijoueur du jeu de société français classique "Nain Jaune".
 
-Le jeu est déployé et jouable à l'adresse https://nain-jaune-online.web.app
+🎮 **Jouable ici :** https://nain-jaune-online.web.app
 
-Le Font-end est déployé sur Firebase et le Back-end sur Render
+Frontend déployé sur **Firebase Hosting**, backend sur **Render**.
 
-## 🎮 À propos du jeu
+---
 
-Le Nain Jaune est un jeu de cartes traditionnel français pour 2-6 joueurs. Les joueurs doivent se débarrasser de toutes leurs cartes en les plaçant sur les piles de la table ou sur les fondations. Le premier joueur à vider sa main gagne la manche.
+## 🃏 À propos du jeu
 
-## 🚀 Démarrage rapide
+Le Nain Jaune est un jeu de cartes traditionnel français pour 2 à 6 joueurs. Les joueurs jouent des séquences de cartes en montant dans la même couleur, cherchant à vider leur main le plus vite possible tout en récoltant des jetons sur les cases spéciales du plateau.
+
+---
+
+## ✅ Fonctionnalités implémentées
+
+### Jeu complet avec règles avancées
+- 🟡 **Ouverture au 7♦** — le détenteur du 7♦ doit ouvrir la manche ; si le 7♦ est dans le talon, le joueur à gauche du donneur ouvre librement
+- 🃏 **Donneur exclu** — avec 3 joueurs ou plus, le donneur distribue et paye les mises mais ne joue pas la manche
+- ⚠️ **Pénalité de passe** — passer coûte 1 jeton qui s'accumule dans un pot remporté par le gagnant de la manche
+- 🔒 **Brocantage** — quand une séquence est bloquée (carte dans le talon), n'importe quel joueur peut payer N−1 jetons pour débloquer ; si tous refusent, le dernier joueur rejoue librement
+- ⭐ **Cases spéciales** — 10♦, V♣, D♠, R♥, 7♦ (Nain Jaune) avec accumulation si non remportées
+- 🏆 **Fin de manche** — décompte des cartes restantes, double pénalité pour le 7♦, gain du pot
+
+### Interface & multijoueur
+- Salles multijoueur en temps réel (Socket.io)
+- Chat intégré par salle
+- Sons immersifs (synthèse audio Web Audio API — coins métalliques, chime de tour)
+- Layout plein écran responsive, cartes jouables en surbrillance
+- Modal "Règles" complet accessible en cours de partie
+- Badge donneur, affichage du pot, indicateur de brocantage
+- Reconnexion automatique avec restauration de la main
+
+---
+
+## 🚀 Démarrage local
 
 ### Prérequis
-
-- Node.js 16+ 
-- npm ou yarn
+- Node.js 16+
 
 ### Installation
 
-1. **Installer les dépendances du serveur**
 ```bash
-cd server
-npm install
-```
+# Backend
+cd server && npm install
 
-2. **Installer les dépendances du client**
-```bash
-cd client
-npm install
+# Frontend
+cd client && npm install
 ```
 
 ### Lancer l'application
 
-**Terminal 1 - Serveur backend:**
 ```bash
-cd server
-npm run dev
-```
-Le serveur démarre sur `http://localhost:5000`
+# Terminal 1 — serveur (port 5000)
+cd server && npm run dev
 
-**Terminal 2 - Frontend React:**
-```bash
-cd client
-npm start
+# Terminal 2 — client (port 3000)
+cd client && npm start
 ```
-L'application s'ouvre sur `http://localhost:3000`
+
+---
 
 ## 📁 Structure du projet
 
@@ -53,90 +68,56 @@ L'application s'ouvre sur `http://localhost:3000`
 NainJaune/
 ├── server/
 │   ├── src/
-│   │   ├── server.js           # Point d'entrée du serveur
+│   │   ├── server.js               # Point d'entrée, Socket.io, CORS
 │   │   ├── game/
-│   │   │   ├── GameManager.js  # Gestion des salles
-│   │   │   ├── Room.js         # Logique d'une partie
-│   │   │   ├── Player.js       # Données des joueurs
-│   │   │   └── Deck.js         # Gestion du deck de cartes
+│   │   │   ├── GameManager.js      # Gestion des salles
+│   │   │   ├── Room.js             # Logique complète d'une partie
+│   │   │   ├── Player.js           # Données des joueurs
+│   │   │   └── Deck.js             # Gestion du deck
 │   │   └── handlers/
-│   │       ├── gameHandlers.js # Événements du jeu
-│   │       └── chatHandlers.js # Gestion du chat
-│   ├── package.json
-│   └── .env.example
+│   │       ├── gameHandlers.js     # Événements du jeu
+│   │       └── chatHandlers.js     # Chat
+│   └── package.json
 ├── client/
 │   ├── src/
-│   │   ├── App.js              # Composant principal
+│   │   ├── App.js
 │   │   ├── pages/
-│   │   │   ├── Home.js         # Écran d'accueil
-│   │   │   └── GameRoom.js     # Interface de jeu
+│   │   │   ├── Home.js             # Écran d'accueil / lobby
+│   │   │   └── GameRoom.js         # Interface de jeu principale
 │   │   ├── components/
-│   │   │   ├── Card.js         # Composant carte
-│   │   │   ├── PlayerHand.js   # Main du joueur
-│   │   │   └── Chat.js         # Chat en temps réel
-│   │   ├── services/
-│   │   │   └── socketService.js # Service Socket.io
-│   │   ├── index.js
-│   │   └── index.css
-│   ├── public/
-│   │   └── index.html
-│   ├── package.json
-│   └── .env.example
+│   │   │   ├── Card.js             # Composant carte
+│   │   │   ├── PlayerHand.js       # Main du joueur local
+│   │   │   └── Chat.js             # Chat temps réel
+│   │   └── services/
+│   │       └── socketService.js    # Service Socket.io
+│   └── package.json
 └── README.md
 ```
 
-## 🎯 Fonctionnalités
+---
 
-- ✅ Création et gestion de salles multijoueur
-- ✅ Communication en temps réel avec Socket.io
-- ✅ Affichage des cartes avec interface intuitive
-- ✅ Chat intégré pour communiquer avec les autres joueurs
-- ✅ Support de 2-6 joueurs par partie
-- ✅ Gestion complète de la logique du jeu
-- ✅ Interface responsive et moderne
+## 🔧 Stack technique
 
-## 🔧 Technologie utilisée
+| Couche | Technologie |
+|--------|-------------|
+| Frontend | React, CSS3, Web Audio API |
+| Backend | Node.js, Express |
+| Temps réel | Socket.io |
+| Déploiement frontend | Firebase Hosting |
+| Déploiement backend | Render |
 
-### Backend
-- **Express.js** - Framework web
-- **Socket.io** - Communication en temps réel
-- **Node.js** - Runtime JavaScript
+---
 
-### Frontend
-- **React** - Bibliothèque UI
-- **Socket.io Client** - Client WebSocket
-- **CSS3** - Styling moderne
+## 🛣️ Roadmap
 
-## 📝 Règles du jeu (implémentation basique)
-
-1. Les joueurs reçoivent un nombre égal de cartes
-2. Le jeu se joue en posant des cartes:
-   - Sur les **piles** en respectant la séquence (suite de même couleur)
-   - Sur les **fondations** avec les cartes correctes
-3. Le premier joueur à vider sa main gagne
-
-## 🛣️ Roadmap future
-
-- [ ] Système de scores et statistiques
-- [ ] Persistance des données (base de données)
+- [ ] Système de scores et statistiques persistantes
 - [ ] Authentification utilisateur
 - [ ] Historique des parties
-- [ ] Système de classement (Elo/Ranking)
-- [ ] Notifications push
 - [ ] Mode spectateur
-- [ ] Avatars et personnalisation
-- [ ] Implémentation complète des règles avancées du Nain Jaune
 - [ ] Tests unitaires et d'intégration
-- [ ] Déploiement en production
 
-## 🤝 Contribution
-
-Les contributions sont bienvenues! N'hésitez pas à soumettre des pull requests ou des issues.
+---
 
 ## 📄 Licence
 
 MIT
-
----
-
-**Prêt à jouer?** Lancez les serveurs et amusez-vous! 🎰
