@@ -762,3 +762,77 @@ describe('Room — integration: full round flow', () => {
     expect(room.players.get(winnerId).points).toBe(winnerBefore + 4);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Room — spectators', () => {
+  it('addSpectator() adds a spectator to the room', () => {
+    const room = makeRoom(2);
+    room.addSpectator('spec-1', 'Charlie');
+    expect(room.spectators.size).toBe(1);
+    expect(room.spectators.get('spec-1')).toEqual({ id: 'spec-1', name: 'Charlie' });
+  });
+
+  it('addSpectator() allows multiple spectators', () => {
+    const room = makeRoom(2);
+    room.addSpectator('spec-1', 'Charlie');
+    room.addSpectator('spec-2', 'Dave');
+    expect(room.spectators.size).toBe(2);
+  });
+
+  it('removeSpectator() removes the spectator', () => {
+    const room = makeRoom(2);
+    room.addSpectator('spec-1', 'Charlie');
+    room.removeSpectator('spec-1');
+    expect(room.spectators.size).toBe(0);
+  });
+
+  it('removeSpectator() is a no-op for unknown id', () => {
+    const room = makeRoom(2);
+    expect(() => room.removeSpectator('ghost')).not.toThrow();
+  });
+
+  it('spectators are included in getGameState()', () => {
+    const room = makeRoom(2);
+    room.addSpectator('spec-1', 'Charlie');
+    const state = room.getGameState();
+    expect(state.spectators).toHaveLength(1);
+    expect(state.spectators[0]).toEqual({ id: 'spec-1', name: 'Charlie' });
+  });
+
+  it('getGameState() returns empty spectators array when none', () => {
+    const room = makeRoom(2);
+    expect(room.getGameState().spectators).toEqual([]);
+  });
+
+  it('isEmpty() returns false when only spectators are present (no players)', () => {
+    const room = new Room('r', 'Alice');
+    // Remove the owner to simulate empty players
+    const [ownerId] = [...room.players.keys()];
+    room.removePlayer(ownerId);
+    room.addSpectator('spec-1', 'Bob');
+    expect(room.isEmpty()).toBe(false);
+  });
+
+  it('isEmpty() returns true when both players and spectators are gone', () => {
+    const room = new Room('r', 'Alice');
+    const [ownerId] = [...room.players.keys()];
+    room.removePlayer(ownerId);
+    expect(room.isEmpty()).toBe(true);
+  });
+
+  it('spectators do not receive cards when game starts', () => {
+    const room = makeRoom(2);
+    room.addSpectator('spec-1', 'Charlie');
+    room.startGame();
+    // Spectators are not in room.players, so they have no hand
+    expect(room.players.has('spec-1')).toBe(false);
+  });
+
+  it('spectators are not included in activePlayerIds', () => {
+    const room = makeRoom(3);
+    room.addSpectator('spec-1', 'Dave');
+    room.startGame();
+    expect(room.activePlayerIds).not.toContain('spec-1');
+  });
+});
