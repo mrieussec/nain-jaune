@@ -110,11 +110,11 @@ NainJaune/
 
 ## 🛣️ Roadmap
 
-- [ ] Système de scores et statistiques persistantes
+- [x] Système de scores et statistiques persistantes
+- [x] Tests unitaires et d'intégration
 - [ ] Authentification utilisateur
 - [ ] Historique des parties
 - [ ] Mode spectateur
-- [ ] Tests unitaires et d'intégration
 
 ---
 
